@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://parking-master.pages.dev/sitemap.xml
+Sitemap: https://wherecar.pages.dev/sitemap.xml
