@@ -76,7 +76,7 @@ export default function MainLayout() {
       )}
 
       <header className="nav-header">
-        <h1>{user?.carNumber || '내 차'} <span style={{fontSize: '0.8rem', color: 'var(--text-secondary)'}}>주차 마스터</span></h1>
+        <h1>{user?.carNumber || '내 차'} <span style={{fontSize: '0.8rem', color: 'var(--text-secondary)'}}>차어디</span></h1>
         <div style={{ display: 'flex', gap: '1rem' }}>
           <button style={{ minHeight: '40px', padding: '0.2rem 0.5rem', width: 'auto' }} onClick={() => navigate('/setup')}>
             <Settings size={20} />

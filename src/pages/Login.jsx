@@ -27,7 +27,7 @@ export default function Login() {
       <div className="card" style={{ width: '100%' }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <Car size={64} color="var(--accent-color)" />
-          <h1 style={{ marginTop: '1rem', fontSize: '1.8rem' }}>주차 마스터</h1>
+          <h1 style={{ marginTop: '1rem', fontSize: '1.8rem' }}>차어디</h1>
           <p style={{ color: 'var(--text-secondary)' }}>내 차 위치를 똑똑하게 기억하세요</p>
         </div>
 

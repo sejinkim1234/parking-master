@@ -14,7 +14,7 @@ export const shareParkingInfo = async (parkingInfo) => {
   try {
     if (navigator.share) {
       await navigator.share({
-        title: '주차 마스터 (Parking Master)',
+        title: '차어디 (chaeodi)',
         text: text,
       });
     } else {
