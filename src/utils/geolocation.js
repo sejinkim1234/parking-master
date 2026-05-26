@@ -53,3 +53,53 @@ export const checkGeofence = async (homeLocation) => {
     return false; // Default to external mode on error
   }
 };
+
+export const getPOIfromCoordinates = async (lat, lng) => {
+  try {
+    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
+      headers: {
+        'Accept-Language': 'ko-KR,ko;q=0.9' // Request Korean if available
+      }
+    });
+    if (!response.ok) return '';
+    const data = await response.json();
+    if (data && data.address) {
+      const name = data.address.building || data.address.retail || data.address.amenity || data.address.tourism || data.address.leisure || data.address.commercial;
+      if (name) return name;
+      
+      const road = data.address.road || data.address.pedestrian;
+      if (road) return `${road} ${data.address.house_number || ''}`.trim();
+      
+      if (data.address.neighbourhood) return data.address.neighbourhood;
+      if (data.address.suburb) return data.address.suburb;
+    }
+    return '';
+    return '';
+  } catch (err) {
+    console.error("POI fetching error:", err);
+    return '';
+  }
+};
+
+export const getCoordinatesFromAddress = async (address) => {
+  try {
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`, {
+      headers: {
+        'Accept-Language': 'ko-KR,ko;q=0.9'
+      }
+    });
+    if (!response.ok) throw new Error('Network response was not ok');
+    const data = await response.json();
+    if (data && data.length > 0) {
+      return {
+        lat: parseFloat(data[0].lat),
+        lng: parseFloat(data[0].lon),
+        address: data[0].display_name
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error("Address geocoding error:", error);
+    throw error;
+  }
+};

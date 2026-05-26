@@ -28,25 +28,39 @@ export default function LiveTimer() {
     return () => clearInterval(interval)
   }, [parkingInfo])
 
+  const handleShowLocation = () => {
+    if (parkingInfo) {
+      alert(`📍 내 차 위치: ${parkingInfo.location}\n📝 메모: ${parkingInfo.memo || '없음'}`)
+    }
+  }
+
   if (!parkingInfo) return null
 
   return (
-    <div style={{
-      position: 'fixed',
-      bottom: '1rem',
-      left: '1rem',
-      right: '1rem',
-      backgroundColor: 'var(--surface-color)',
-      padding: '1rem',
-      borderRadius: 'var(--border-radius)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: '0.5rem',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-      border: elapsed.isOvertime ? '2px solid var(--danger-color)' : '1px solid var(--surface-active)',
-      zIndex: 1000
-    }}>
+    <div 
+      onClick={handleShowLocation}
+      style={{
+        position: 'fixed',
+        bottom: '1rem',
+        left: '1rem',
+        right: '1rem',
+        backgroundColor: 'var(--surface-color)',
+        padding: '1rem',
+        borderRadius: 'var(--border-radius)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '0.5rem',
+        boxShadow: 'var(--glass-shadow)',
+        border: elapsed.isOvertime ? '2px solid var(--danger-color)' : '1px solid var(--surface-active)',
+        zIndex: 1000,
+        cursor: 'pointer',
+        transition: 'transform 0.2s',
+      }}
+      onMouseDown={e => e.currentTarget.style.transform = 'scale(0.95)'}
+      onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+      onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+    >
       <Clock color={elapsed.isOvertime ? 'var(--danger-color)' : 'var(--text-primary)'} />
       <span style={{ 
         color: elapsed.isOvertime ? 'var(--danger-color)' : 'var(--text-primary)',

@@ -1,19 +1,25 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { useStore } from '../store'
 import { shareParkingInfo } from '../utils/share'
 import { Mic, Share2, MapPin } from 'lucide-react'
 
 export default function HomeMode() {
-  const floorCount = useStore(state => state.floorCount)
+  const floorRange = useStore(state => state.floorRange) || { min: -3, max: -1 }
+  const subZones = useStore(state => state.subZones) || ['위', '아래']
   const parkingInfo = useStore(state => state.parkingInfo)
   const setParkingInfo = useStore(state => state.setParkingInfo)
   const [isRecording, setIsRecording] = useState(false)
   
-  // Create array from 1 to floorCount
-  const floors = Array.from({ length: floorCount }, (_, i) => i + 1)
+  // Create floors array from max to min (top to bottom), excluding 0
+  const floors = []
+  for (let i = floorRange.max; i >= floorRange.min; i--) {
+    if (i !== 0) floors.push(i)
+  }
 
-  const handleSaveLocation = (floor, position) => {
-    const locationStr = `B${floor} ${position}`
+  const formatFloor = (num) => num < 0 ? `B${Math.abs(num)}` : `${num}F`
+
+  const handleSaveLocation = (floorNum, zone) => {
+    const locationStr = `${formatFloor(floorNum)} ${zone}`
     setParkingInfo({
       mode: 'home',
       location: locationStr,
@@ -37,37 +43,51 @@ export default function HomeMode() {
     
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript
-      // Parse transcript, e.g., "지하 3층 아래"
-      const floorMatch = transcript.match(/(\d+)층/)
-      const positionMatch = transcript.includes('아래') ? '아래' : (transcript.includes('위') ? '위' : '')
       
-      if (floorMatch) {
-        const f = Math.min(parseInt(floorMatch[1]), floorCount)
-        const p = positionMatch || '위'
-        handleSaveLocation(f, p)
+      // Parse floor
+      let detectedFloor = null
+      const bMatch = transcript.match(/지하\s*(\d+)층/)
+      const fMatch = transcript.match(/지상\s*(\d+)층/) || transcript.match(/(\d+)층/)
+      
+      if (bMatch) {
+        detectedFloor = -Math.abs(parseInt(bMatch[1]))
+      } else if (fMatch && !transcript.includes('지하')) {
+        detectedFloor = Math.abs(parseInt(fMatch[1]))
+      }
+
+      // Parse subzone
+      let detectedZone = null
+      for (const z of subZones) {
+        if (transcript.includes(z)) {
+          detectedZone = z
+          break
+        }
+      }
+      
+      if (detectedFloor !== null) {
+        // clamp floor
+        if (detectedFloor < floorRange.min) detectedFloor = floorRange.min
+        if (detectedFloor > floorRange.max) detectedFloor = floorRange.max
+        if (detectedFloor === 0) detectedFloor = 1 // fallback if 0
+
+        handleSaveLocation(detectedFloor, detectedZone || subZones[0])
       } else {
-        alert(`인식된 음성: "${transcript}"\n정확한 층수(예: 지하 3층 위)를 말씀해주세요.`)
+        alert(`인식된 음성: "${transcript}"\n정확한 층수(예: 지하 3층 ${subZones[0]})를 말씀해주세요.`)
       }
     }
     
     recognition.start()
   }
 
-  const handleShare = () => {
-    if (parkingInfo) {
-      shareParkingInfo(parkingInfo)
-    }
-  }
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       
       {parkingInfo && parkingInfo.mode === 'home' && (
-        <div className="card" style={{ backgroundColor: 'var(--accent-color)', color: '#000' }}>
-          <h2 style={{ color: '#000', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div className="card" style={{ backgroundColor: 'var(--accent-color)', color: '#fff' }}>
+          <h2 style={{ color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <MapPin size={24} /> 저장된 위치: {parkingInfo.location}
           </h2>
-          <button style={{ backgroundColor: '#000', color: 'var(--accent-color)', marginTop: '0.5rem' }} onClick={handleShare}>
+          <button style={{ backgroundColor: '#000', color: 'var(--accent-color)', marginTop: '0.5rem' }} onClick={() => shareParkingInfo(parkingInfo)}>
             <Share2 size={20} /> 카카오톡 공유
           </button>
         </div>
@@ -92,22 +112,22 @@ export default function HomeMode() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {floors.map(floor => (
             <div key={floor} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <div style={{ width: '60px', fontSize: '1.2rem', fontWeight: 'bold' }}>B{floor}</div>
-              <div style={{ display: 'flex', flex: 1, gap: '0.5rem' }}>
-                <button 
-                  className={parkingInfo?.location === `B${floor} 위` ? 'primary' : ''}
-                  onClick={() => handleSaveLocation(floor, '위')}
-                  style={{ flex: 1 }}
-                >
-                  위 (Upper)
-                </button>
-                <button 
-                  className={parkingInfo?.location === `B${floor} 아래` ? 'primary' : ''}
-                  onClick={() => handleSaveLocation(floor, '아래')}
-                  style={{ flex: 1 }}
-                >
-                  아래 (Lower)
-                </button>
+              <div style={{ width: '50px', fontSize: '1.2rem', fontWeight: 'bold' }}>{formatFloor(floor)}</div>
+              <div style={{ display: 'flex', flex: 1, gap: '0.5rem', flexWrap: 'wrap' }}>
+                {subZones.map(zone => {
+                  const locationStr = `${formatFloor(floor)} ${zone}`
+                  const isSelected = parkingInfo?.location === locationStr
+                  return (
+                    <button 
+                      key={zone}
+                      className={isSelected ? 'primary' : ''}
+                      onClick={() => handleSaveLocation(floor, zone)}
+                      style={{ flex: 1, minWidth: '80px' }}
+                    >
+                      {zone}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           ))}
